@@ -32,101 +32,58 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-# Define the path where the benchmark results JSON file is located
-json_file_path = 'CSC375\\ClientEmulator-JS\\clientemulator\\src\\main\\java\\clientemu\\benchmark_results.json'
+# Load the results file
+with open('CSC375\\ClientEmulator-JS\\clientemulator\\src\\main\\java\\clientemu\\benchmark_results.json', 'r') as f:
+    results = json.load(f)
 
 # Define the path where the images should be saved
-output_path = 'CSC375\\ClientEmulator-JS\\clientemulator\\WebsiteBenchmark'
+output_path = 'CSC375\\ClientEmulator-JS\\clientemulator\\WebsiteBenchmark\\'
 
-def load_benchmark_results(file_path):
-    """
-    Load the benchmark results from a JSON file.
-    
-    Args:
-        file_path (str): The path to the JSON file containing the benchmark results.
-    
-    Returns:
-        list: A list of dictionaries containing the benchmark results.
-    """
-    with open(file_path, 'r') as f:
-        return json.load(f)
+# Ensure the directory exists
+os.makedirs(output_path, exist_ok=True)
 
-def plot_benchmark_results(results, output_directory):
-    """
-    Plot the benchmark results and save the plot to a file.
-    
-    Args:
-        results (list): A list of dictionaries containing the benchmark results.
-        output_directory (str): The directory where the plot image will be saved.
-    """
-    # Initialize lists to store the benchmark scores and errors for both registries
-    custom_registry_scores = []
-    standard_registry_scores = []
-    custom_registry_errors = []
-    standard_registry_errors = []
-    
-    # Sort the benchmarks by name to align the custom and standard registry benchmarks
-    results.sort(key=lambda x: x['benchmark'])
-    
-    # Collect scores and errors for each type of registry
-    for benchmark in results:
-        score = benchmark['primaryMetric']['score']
-        error = benchmark['primaryMetric']['scoreError']
-        if 'customRegistry' in benchmark['benchmark']:
-            custom_registry_scores.append(score)
-            custom_registry_errors.append(error)
-        else:
-            standard_registry_scores.append(score)
-            standard_registry_errors.append(error)
+# Initialize lists to store the benchmark names, scores, and errors
+benchmark_names = []
+scores = []
+errors = []
 
-    # Plot the benchmarks
-    plt.figure(figsize=(10, 5))
+# Extract data
+for benchmark in results:
+    benchmark_names.append(benchmark['benchmark'])
+    scores.append(benchmark['primaryMetric']['score'])
+    errors.append(benchmark['primaryMetric']['scoreError'])
 
-    # Plot only up to the minimum length of the two sets
-    min_length = min(len(custom_registry_scores), len(standard_registry_scores))
-    time_passed = np.arange(1, min_length + 1)
-    
-    # Error bars and scatter plot for custom registry scores
-    plt.errorbar(time_passed, custom_registry_scores[:min_length], yerr=custom_registry_errors[:min_length], fmt='o', color='red', label='Custom Registry')
-    
-    # Error bars and scatter plot for standard registry scores
-    plt.errorbar(time_passed, standard_registry_scores[:min_length], yerr=standard_registry_errors[:min_length], fmt='o', color='blue', label='Standard Registry')
-    
-    # Perform and plot quadratic fit for custom registry scores
-    if len(custom_registry_scores) > 2:
-        coeff_custom = np.polyfit(time_passed, custom_registry_scores[:min_length], 2)
-        polynomial_custom = np.poly1d(coeff_custom)
-        ys_custom = polynomial_custom(time_passed)
-        plt.plot(time_passed, ys_custom, color='red', alpha=0.5, label='Custom Registry Fit')
-    
-    # Perform and plot quadratic fit for standard registry scores
-    if len(standard_registry_scores) > 2:
-        coeff_standard = np.polyfit(time_passed, standard_registry_scores[:min_length], 2)
-        polynomial_standard = np.poly1d(coeff_standard)
-        ys_standard = polynomial_standard(time_passed)
-        plt.plot(time_passed, ys_standard, color='blue', alpha=0.5, label='Standard Registry Fit')
-    
-    # Add labels, title, and legend
-    plt.xlabel('Time Passed (arbitrary units)')
-    plt.ylabel('Throughput (ops/s)')
-    plt.title('Benchmark Scores Over Time')
-    plt.legend()
+# Create a scatter plot
+plt.figure(figsize=(10, 5))
+x = np.arange(1, len(scores) + 1)
+y = np.array(scores)
+errors = np.array(errors)
 
-    # Adjust layout to prevent overlap
-    plt.tight_layout()
-    
-    # Check if the output directory exists, if not create it
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-    
-    # Save the figure to the output directory
-    plt.savefig(os.path.join(output_directory, 'benchmark_quadratic_fit.png'))
-    
-    # Close the figure
-    plt.close()
+# Fitting a quadratic polynomial (second degree)
+coefficients = np.polyfit(x, y, 2)
+polynomial = np.poly1d(coefficients)
+ys = polynomial(x)
 
-# Load the benchmark results
-benchmark_results = load_benchmark_results(json_file_path)
+# Plot the polynomial fit
+plt.plot(x, ys, label='Speed Comparison')
 
-# Plot the benchmark results and save the plot
-plot_benchmark_results(benchmark_results, output_path)
+# Plot the original data with error bars
+# Custom Benchmark in blue
+# Standard Benchmark in red
+for i in range(len(benchmark_names)):
+    if 'Custom' in benchmark_names[i]:
+        color = 'blue'
+    else:
+        color = 'red'
+    plt.errorbar(x[i], y[i], yerr=errors[i], fmt='o', color=color, label=benchmark_names[i])
+
+# Adding labels and title
+plt.xlabel('As the number of requests increases')
+plt.ylabel('Throughput (ops/s)')
+plt.title('Comparison in Speed between Benchmarks')
+plt.legend()
+
+plt.tight_layout()
+# Save the plot to the specified path
+plt.savefig(f"{output_path}ParallelBenchmark.png")
+plt.close()  # Close the figure to avoid displaying it in a notebook environment

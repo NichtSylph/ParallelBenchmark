@@ -1,2 +1,0 @@
-JMH S 34 clientemu.CourseSchedulerBenchmark S 71 clientemu.generated.CourseSchedulerBenchmark_testCustomRegistry_jmhTest S 18 testCustomRegistry S 10 Throughput E A 1 1 1 E I 3 100 T 3 1 s E I 3 100 T 3 1 s E I 1 1 E E E E E E E E E 
-JMH S 34 clientemu.CourseSchedulerBenchmark S 73 clientemu.generated.CourseSchedulerBenchmark_testStandardRegistry_jmhTest S 20 testStandardRegistry S 10 Throughput E A 1 1 1 E I 3 100 T 3 1 s E I 3 100 T 3 1 s E I 1 1 E E E E E E E E E 
