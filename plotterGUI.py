@@ -26,64 +26,73 @@ The resulting plot will be saved as 'benchmark_quadratic_fit.png' in the specifi
 
 Author: Joel Santos
 """
-
 import json
-import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
-import os
+import matplotlib.pyplot as plt
 
-# Load the results file
-with open('CSC375\\ClientEmulator-JS\\clientemulator\\src\\main\\java\\clientemu\\benchmark_results.json', 'r') as f:
-    results = json.load(f)
+# Load the JSON data from the file
+file_path = 'CSC375\\ClientEmulator-JS\\clientemulator\\src\\main\\java\\clientemu\\benchmark_results.json'
+with open(file_path, 'r') as file:
+    benchmark_data = json.load(file)
 
-# Define the path where the images should be saved
-output_path = 'CSC375\\ClientEmulator-JS\\clientemulator\\WebsiteBenchmark\\'
+# Define operation type dictionary for reference
+operation_type_dict = {'0': 'Add', '1': 'Get', '2': 'Update', '3': 'Remove'}
 
-# Ensure the directory exists
-os.makedirs(output_path, exist_ok=True)
+# Organize the data into a list for DataFrame creation
+operation_scores_list = []
+for entry in benchmark_data:
+    operation_type = operation_type_dict[entry['params']['operationType']]
+    concurrency_type = 'Custom' if 'Custom' in entry['benchmark'] else 'Standard'
+    score = entry['primaryMetric']['score']
+    operation_scores_list.append({
+        'Operation Type': operation_type,
+        'Concurrency Type': concurrency_type,
+        'Score': score
+    })
 
-# Initialize lists to store the benchmark names, scores, and errors
-benchmark_names = []
-scores = []
-errors = []
+# Create a DataFrame from the list
+df_scores = pd.DataFrame(operation_scores_list)
 
-# Extract data
-for benchmark in results:
-    benchmark_names.append(benchmark['benchmark'])
-    scores.append(benchmark['primaryMetric']['score'])
-    errors.append(benchmark['primaryMetric']['scoreError'])
+# Define a function to plot the operation scores with a parabola for a given operation type
+def plot_operation_with_parabola(operation, df_scores):
+    # Extract the scores for the given operation
+    custom_scores = df_scores[(df_scores['Operation Type'] == operation) & (df_scores['Concurrency Type'] == 'Custom')]['Score']
+    standard_scores = df_scores[(df_scores['Operation Type'] == operation) & (df_scores['Concurrency Type'] == 'Standard')]['Score']
+    
+    # Prepare data for the plot
+    x_custom = np.ones(len(custom_scores))
+    x_standard = 2 * np.ones(len(standard_scores))
+    x_values = np.concatenate([x_custom, x_standard])
+    y_values = np.concatenate([custom_scores, standard_scores])
+    
+    # Fit a quadratic function to the combined data
+    coefs = np.polyfit(x_values, y_values, 2)
+    parabola = np.poly1d(coefs)
+    
+    # Generate x values for the parabola plot
+    x_fit = np.linspace(0.5, 2.5, 200)
+    y_fit = parabola(x_fit)
+    
+    # Create a new figure for the plot
+    plt.figure(figsize=(8, 6))
+    
+    # Create scatter plots
+    plt.scatter(x_custom, custom_scores, color='blue', alpha=0.7, label='Custom Concurrency')
+    plt.scatter(x_standard, standard_scores, color='red', alpha=0.7, label='Standard Concurrency')
+    
+    # Plot the parabola
+    plt.plot(x_fit, y_fit, color='green', linestyle='--', label='Fitted Parabola')
+    
+    # Formatting the plot
+    plt.xticks([1, 2], ['Custom', 'Standard'])
+    plt.title(f'{operation} Operation')
+    plt.ylabel('Score (ops/s)')
+    plt.legend()
+    
+    # Show the plot
+    plt.show()
 
-# Create a scatter plot
-plt.figure(figsize=(10, 5))
-x = np.arange(1, len(scores) + 1)
-y = np.array(scores)
-errors = np.array(errors)
-
-# Fitting a quadratic polynomial (second degree)
-coefficients = np.polyfit(x, y, 2)
-polynomial = np.poly1d(coefficients)
-ys = polynomial(x)
-
-# Plot the polynomial fit
-plt.plot(x, ys, label='Speed Comparison')
-
-# Plot the original data with error bars
-# Custom Benchmark in blue
-# Standard Benchmark in red
-for i in range(len(benchmark_names)):
-    if 'Custom' in benchmark_names[i]:
-        color = 'blue'
-    else:
-        color = 'red'
-    plt.errorbar(x[i], y[i], yerr=errors[i], fmt='o', color=color, label=benchmark_names[i])
-
-# Adding labels and title
-plt.xlabel('As the number of requests increases')
-plt.ylabel('Throughput (ops/s)')
-plt.title('Comparison in Speed between Benchmarks')
-plt.legend()
-
-plt.tight_layout()
-# Save the plot to the specified path
-plt.savefig(f"{output_path}ParallelBenchmark.png")
-plt.close()  # Close the figure to avoid displaying it in a notebook environment
+# Now call the plotting function for each operation type
+for operation in ['Add', 'Get', 'Update', 'Remove']:
+    plot_operation_with_parabola(operation, df_scores)

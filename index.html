@@ -22,26 +22,29 @@
 </head>
 <body>
     <div class="container">
-        <h1>Benchmark Results</h1>
+        <h1>Benchmark Results for Add, Get, Update and Remove</h1>
         <div>
-            <h2>Benchmark Name</h2>
-            <img src="https://github.com/NichtSylph/ParallelBenchmark/blob/master/ParallelBenchmark.png?raw=true" alt="Benchmark Result Plot">
+            <h2>Benchmark Add</h2>
+            <img src="https://github.com/NichtSylph/ParallelBenchmark/blob/master/addPlot.jpg?raw=true" alt="Benchmark Result Plot Add">
+            <h2>Benchmark Get</h2>
+            <img src="https://github.com/NichtSylph/ParallelBenchmark/blob/master/getPlot.jpg?raw=true" alt="Benchmark Result Plot Get">
+            <h2>Benchmark Update</h2>
+            <img src="https://github.com/NichtSylph/ParallelBenchmark/blob/master/removePlot.jpg?raw=true" alt="Benchmark Result Plot Update">
+            <h2>Benchmark Remove</h2>
+            <img src="https://github.com/NichtSylph/ParallelBenchmark/blob/master/updatePlot.jpg?raw=true" alt="Benchmark Result Plot Remove">
         </div>
         <div class="explanation">
             <h2>Performance Analysis</h2>
             <p>
-                The benchmark results indicate that the custom registry implementation performed marginally better than the standard registry. This performance difference can be attributed to the different concurrency control mechanisms used by the two registries.
+                The benchmark results illustrate the strengths and trade-offs between Custom Concurrency and Standard Concurrency mechanisms across various operations. The Custom Concurrency strategy, employing ReentrantReadWriteLock, optimizes for read performance by allowing multiple concurrent reads, which is advantageous for workloads where read operations predominate. However, it introduces overhead for write operations due to the necessity of acquiring and releasing the write lock, albeit allowing more concurrency than exclusive locks.
             </p>
             <p>
-                Specifically, the custom registry showed slightly faster performance in write-heavy operations due to the use of fine-grained locking allowing more concurrent access to the registry without significant contention. The ReentrantReadWriteLock permits multiple threads to read a resource concurrently, as long as there are no threads writing to it, and only one thread to write at a time, which provides a balance between read and write operations.
+                On the other hand, the Standard Concurrency approach, utilizing ConcurrentHashMap, provides consistent performance across both read and write operations. Its segment-locking mechanism minimizes contention during concurrent writes, making it well-suited for high-throughput environments where write operations are frequent and need to be performed atomically across multiple threads.
             </p>
             <p>
-                Conversely, the standard registry, which utilizes ConcurrentHashMap, had nearly identical performance, likely because its lock-free read operations provide very fast access for read-heavy operations. ConcurrentHashMap is designed for concurrent access and updates, using a segment-locking mechanism that allows a high degree of concurrency.
+                The observed results indicate that while Custom Concurrency can offer benefits for read-dominated scenarios by reducing read contention, Standard Concurrency remains a strong contender for balanced or write-heavy workloads due to its efficient handling of concurrent updates. The choice between the two should be guided by the specific needs of the application, considering the proportion of read versus write operations and the desired concurrency level.
             </p>
-            <p>
-                These insights can guide future optimizations by focusing on enhancing the custom registry's read performance to better leverage the read-write lock's capability for multiple concurrent reads, while maintaining its write performance.
-            </p>            
-        </div>
+        </div>        
     </div>
 </body>
 </html>
